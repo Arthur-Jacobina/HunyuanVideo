@@ -376,7 +376,7 @@ class HunyuanVideoSampler(Inference):
         model,
         text_encoder_2=None,
         pipeline=None,
-        use_cpu_offload=False,
+        use_cpu_offload=True,
         device=0,
         logger=None,
         parallel_args=None
