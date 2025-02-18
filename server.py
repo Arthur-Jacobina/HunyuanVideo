@@ -4,7 +4,6 @@ from hyvideo.inference import HunyuanVideoSampler
 from hyvideo.constants import NEGATIVE_PROMPT
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from loguru import logger
 from typing import Optional
 import uvicorn
 from pathlib import Path
@@ -53,17 +52,19 @@ def generate_video(
     )
     
     samples = outputs['samples']
-    sample = samples[0].unsqueeze(0)
     
-    save_path = os.path.join(os.getcwd(), "gradio_outputs")
-    os.makedirs(save_path, exist_ok=True)
-    
-    time_flag = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%H:%M:%S")
-    video_path = f"{save_path}/{time_flag}_seed{outputs['seeds'][0]}_{outputs['prompts'][0][:100].replace('/','')}.mp4"
-    save_videos_grid(sample, video_path, fps=24)
-    logger.info(f'Sample saved to: {video_path}')
-    
-    return video_path
+    # Save samples following the pattern from sample_video.py
+    if 'LOCAL_RANK' not in os.environ or int(os.environ['LOCAL_RANK']) == 0:
+        sample = samples[0].unsqueeze(0)
+        save_path = os.path.join(os.getcwd(), "gradio_outputs")
+        os.makedirs(save_path, exist_ok=True)
+        
+        time_flag = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%H:%M:%S")
+        video_path = f"{save_path}/{time_flag}_seed{outputs['seeds'][0]}_{outputs['prompts'][0][:100].replace('/','')}.mp4"
+        save_videos_grid(sample, video_path, fps=24)
+        logger.info(f'Sample saved to: {video_path}')
+        
+        return video_path
 
 class VideoRequest(BaseModel):
     prompt: Optional[str] = "Extremely anxious anime girl with messy pink hair, signature thick uneven bangs covering forehead, tiny side ponytails. Large round purple eyes with visible eye bags underneath. Navy school uniform with rumpled appearance. Perpetually worried expression with comically exaggerated sweat drops."
